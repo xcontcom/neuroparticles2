@@ -1,6 +1,6 @@
-const gridSize = 64;
+const gridSize = 128;
 const scale = 4;
-const PopulationSize = 40;
+const PopulationSize = 80;
 
 let field;
 let canvas, ctx;
@@ -251,61 +251,87 @@ function downsample(array) {
 			let v2 = array[x * 2][y * 2 + 1];
 			let v3 = array[x * 2 + 1][y * 2 + 1];
 
-			// symbolic pooling: majority vote
 			let sum = v0 + v1 + v2 + v3;
-			result[x][y] = sum > 1 ? 1 : 0; 
-			//result[x][y] = sum%2;
+			// symbolic pooling: majority vote
+			//result[x][y] = sum > 1 ? 1 : 0; 
+			result[x][y] = sum%2;
 		}
 	}
 	return result;
 }
 
-function evaluate(input, rulesArray, x, y) {
-	
-	let current = [];
 
-	// Expand 1-layer input to 4 layers
-	current[0] = input; // homies
-	current[1] = input; // homies
-	current[2] = input; // duplicate homies
-	current[3] = input; // duplicate homies
 
-	for (let i = 0; i < rulesArray.length; i++) {
-		const padded = padding(current);
 
-		let evolved = [];
-		for (let j = 0; j < rulesArray[i].length; j++) {
-			evolved[j] = cellular(padded, rulesArray[i][j]);
-		}
 
-		for (let j = 0; j < evolved.length; j++) {
-			evolved[j] = downsample(evolved[j]);
-		}
-		current = evolved;
-		
-	}
-
-	// Final symbolic output: higher resolution grid
-	const finalField = padding(current); // 2×gridSize x 2×gridSize
-	const size = finalField.length;
-
-	// Scale coordinates
-	const sx = (x * 2) % size;
-	const sy = (y * 2) % size;
-
-	// Extract 3×3 patch around (sx, sy) with toroidal wrap
-	const patch3x3 = [];
-	for (let dx = -1; dx <= 1; dx++) {
-		const row = [];
-		for (let dy = -1; dy <= 1; dy++) {
-			const xx = (sx + dx + size) % size;
-			const yy = (sy + dy + size) % size;
-			row.push(finalField[xx][yy]);
-		}
-		patch3x3.push(row);
-	}
-	return patch3x3;
+function extractBlock(field, cx, cy, radius) {
+    const size = 2 * radius + 3;
+    let block = Array(size);
+    for (let i = 0; i < size; i++) {
+        block[i] = new Int8Array(size);
+    }
+    
+    for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+            let gx = (cx + dx + gridSize) % gridSize;
+            let gy = (cy + dy + gridSize) % gridSize;
+            block[dx+radius][dy+radius] = field[gx][gy];
+        }
+    }
+    return block;
 }
+function evaluate(field, rulesArray, x, y) {
+    const radius = rulesArray.length;  // 6 layers
+    const blockSize = 2 * radius + 3;  // 13x13 block
+    
+    // Extract local block around the particle
+    let layer0Block = extractBlock(field, x, y, radius);
+    
+    // Initialize with current block in first channel
+    let current = [
+        layer0Block,
+        Array(blockSize).fill().map(() => Array(blockSize).fill(0)),
+        Array(blockSize).fill().map(() => Array(blockSize).fill(0)),
+        Array(blockSize).fill().map(() => Array(blockSize).fill(0))
+    ];
+
+    // Process through all layers
+    for (let i = 0; i < rulesArray.length; i++) {
+        const padded = padding(current);
+        let evolved = [];
+        
+        for (let j = 0; j < rulesArray[i].length; j++) {
+            evolved[j] = cellular(padded, rulesArray[i][j]);
+        }
+        
+        for (let j = 0; j < evolved.length; j++) {
+            evolved[j] = downsample(evolved[j]);
+        }
+        current = evolved;
+    }
+
+    // Final padding to get full-resolution output
+    const finalField = padding(current);
+    const size = finalField.length;
+    
+    // Center point in the final field (particle position)
+    const centerX = 2 * radius;
+    const centerY = 2 * radius;
+    
+    // Extract 3x3 patch around center
+    const patch3x3 = [];
+    for (let dx = -1; dx <= 1; dx++) {
+        const row = [];
+        for (let dy = -1; dy <= 1; dy++) {
+            const xx = (centerX + dx + size) % size;
+            const yy = (centerY + dy + size) % size;
+            row.push(finalField[xx][yy]);
+        }
+        patch3x3.push(row);
+    }
+    return patch3x3;
+}
+
 
 function fillField(gridSize = 256, PopulationSize) {
 	const layer1 = []; // Population1
@@ -464,7 +490,7 @@ function countpoints(){
 	const pop1Min = Math.min(...fitness1);
 	
 
-	if (epoch % 500 === 0 && epoch !== 0) {
+	if (epoch % 1000 === 0 && epoch !== 0) {
 		evolute(pop1Type);
 		pop1.fitness.fill(0); // reset fitness after evolution
 		document.getElementById('console-log0').innerHTML=`Evolved at epoch ${epoch}, average fitness=${pop1Eff}`;
