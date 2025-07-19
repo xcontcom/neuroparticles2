@@ -1,0 +1,32 @@
+<!DOCTYPE html> 
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Neuroparticles</title>
+<link rel="stylesheet" href="style.css" type="text/css" />
+<script type="text/javascript" src="particles.js"></script>
+</head>
+<body>
+<div class="topbuttons">
+	<input type="button" value="Start" onClick="start();" /><input type="button" value="Stop" onClick="stop();" />
+	<div id="mp1">Mutations <input type="text" id="mutatepercent" value="25" oninput="syncParams()" /> %</div>
+	<div id="mp2">Gens <input type="text" id="mutategen" value="16" oninput="syncParams()" /></div>
+	<div id="mp3">Evolve every <input type="text" id="evolveInterval" value="1000" oninput="syncParams()" /> epochs</div>
+</div>
+<div id="canv"></div>
+<div id="console-log0"></div>
+<div id="console-log1"></div>
+<div id="console-log2"></div>
+<canvas id="myCanvas"></canvas>
+<div class="footerbuttons">
+	<input type="button" value="Save Genome Pool" onclick="downloadPopulation(0.25)" />
+	<input type="file" id="loadFile" style="display:none" onchange="loadPopulation(event)" />
+	<input type="button" value="Load Genome Pool" onclick="triggerLoad()" />
+</div>
+
+<script>
+	init();		
+</script>
+<div><br /><b><a href="https://github.com/xcontcom/neuroparticles2">https://github.com/xcontcom/neuroparticles2</a></b></div>
+</body>
+</html>
