@@ -2,6 +2,10 @@
 
 
 
+https://github.com/user-attachments/assets/7d285fc6-1021-442e-95a4-f652e0969544
+
+
+
 This is a sequel to the original [Neuroparticles](https://github.com/xcontcom/neuroparticles), where particles were controlled by fully connected neural networks.
 In this version, we've replaced those networks with compact cellular automata - making the system simpler, faster, and fully symbolic.
 
@@ -52,6 +56,12 @@ So our field is filled with particles.
 Each particle is an entire cellular automaton.
 All automata are different.
 We evolve these automata using a genetic algorithm.
+
+---
+
+## Demo
+
+[Demo](https://xcont.com/neuroparticles/particles.html)
 
 ---
 
