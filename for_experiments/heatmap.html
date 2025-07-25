@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Fitness Heatmap</title>
+	<style>
+		body { background: #111; color: #eee; font-family: sans-serif; text-align: center; }
+		canvas { border: 1px solid #555; image-rendering: pixelated; margin-top: 1em; }
+	</style>
+</head>
+<body>
+	<h1>Fitness Heatmap</h1>
+	<canvas id="canvas" width="500" height="256"></canvas>
+
+	<script>
+	const canvas = document.getElementById("canvas");
+	const ctx = canvas.getContext("2d");
+
+	fetch("fitness_log.json")
+		.then(response => response.json())
+		.then(data => drawHeatmap(data))
+		.catch(err => {
+			console.error("Failed to load fitness_log.json", err);
+			ctx.fillStyle = "#f00";
+			ctx.fillText("⚠️ Could not load fitness_log.json", 10, 20);
+		});
+
+	function drawHeatmap(log) {
+		const width = log.length;
+		const height = canvas.height;
+		canvas.width = canvas.width;
+
+		// Find fitness range
+		let min = Infinity, max = -Infinity;
+		log.forEach(entry => {
+			if (entry.avg < min) min = entry.avg;
+			if (entry.avg > max) max = entry.avg;
+		});
+
+		// Normalize and draw
+		for (let x = 0; x < width; x++) {
+			const val = log[x].avg;
+			const norm = (val - min) / (max - min);
+			const y = height - Math.floor(norm * height);
+			ctx.fillStyle = `hsl(${norm * 240}, 100%, 50%)`;
+			ctx.fillRect(x*canvas.width/width, y, 1, 1);
+		}
+
+		console.log(`📈 Min avg: ${min.toFixed(2)}, Max avg: ${max.toFixed(2)}`);
+	}
+	</script>
+</body>
+</html>
